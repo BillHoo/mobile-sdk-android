@@ -176,4 +176,8 @@ internal class DataManager(
     }
 
     fun getDistributionHash(): String? = crowdinPreferences.getString(DISTRIBUTION_HASH)
+
+    fun invalidateAuthData() {
+        saveData(AUTH_INFO, null)
+    }
 }

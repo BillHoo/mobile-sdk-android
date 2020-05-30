@@ -283,19 +283,24 @@ object Crowdin {
      * Auth to Crowdin platform. Create connection for realtime updates if feature turned on.
      */
     @JvmStatic
-    fun authorize(activity: Activity) {
+    fun authorize(context: Context) {
         if (!FeatureFlags.isRealTimeUpdateEnabled || !FeatureFlags.isScreenshotEnabled) {
             return
         }
 
-        if (isAuthorized()) {
-            tryCreateRealTimeConnection()
-        } else {
-            createAuthDialog(activity) { AuthActivity.launchActivity(activity) }
+        if (!isAuthorized()) {
+            createAuthDialog(context) { AuthActivity.launchActivity(context) }
         }
     }
 
-    internal fun isAuthorized(): Boolean {
+    /**
+     * Logs out from Crowdin platform.
+     */
+    fun logOut() {
+        dataManager?.invalidateAuthData()
+    }
+
+    fun isAuthorized(): Boolean {
         dataManager?.let {
             val oldHash = it.getDistributionHash()
             val newHash = config.distributionHash
@@ -307,7 +312,10 @@ object Crowdin {
         return false
     }
 
-    internal fun tryCreateRealTimeConnection() {
+    /**
+     * Create realtime update connection.
+     */
+    fun createRealTimeConnection() {
         if (FeatureFlags.isRealTimeUpdateEnabled) {
             realTimeUpdateManager?.openConnection()
         }
@@ -318,11 +326,13 @@ object Crowdin {
      */
     @JvmStatic
     fun disconnectRealTimeUpdates() {
-        realTimeUpdateManager?.let {
-            it.closeConnection()
-            realTimeUpdateManager = null
-        }
+        realTimeUpdateManager?.closeConnection()
     }
+
+    /**
+     * Return `real-time` feature enable state. true - enabled, false - disabled.
+     */
+    fun isRealTimeUpdatesEnabled(): Boolean = realTimeUpdateManager?.isConnectionCreated ?: false
 
     /**
      * Register shake detector. Will trigger force update on shake event.
